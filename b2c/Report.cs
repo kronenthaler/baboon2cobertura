@@ -1,15 +1,17 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading;
 using Mono.Data.Sqlite;
 
+
 namespace b2c {
 	public class Report : IDisposable {
 		private static SqliteConnection connection;
-		private string srcPath;
-		private string xmlPath;
+		private static string srcPath;
+		private static string xmlPath;
 		private int linesValid;
 		private int linesCovered;
 		private IDictionary<string, Package> packages;
@@ -29,20 +31,20 @@ namespace b2c {
 		private void InitializeData() {
 			//initialize a data structure.
 			using(var tx = connection.BeginTransaction()) 
-			using(var cmd = new SqliteCommand(connection)){
-				cmd.Transaction = tx;
-				cmd.CommandText = @"SELECT distinct(classname) FROM methods";
+			using(var cmd = new SqliteCommand("SELECT distinct(classname),sourcefile FROM methods WHERE sourcefile != '';", connection)){
 				using(var record = cmd.ExecuteReader()) {
 					while(record.HasRows && record.Read()) {
 						//all classes, packages can be infered.
 						Class c = new Class(Convert.ToString(record["sourcefile"]), Convert.ToString(record["classname"]));
 						string[] path = c.name.Split('.');
-						string packageName =c.name.Substring(0, c.name.IndexOf(path[path.Length-1]));
+						string packageName = c.name.Substring(0, c.name.IndexOf(path[path.Length-1])-1);
 						if(!packages.ContainsKey(packageName)) {
 							packages.Add(packageName, new Package(packageName));
 						}
 
 						packages[packageName].AddClass(c);
+						linesCovered += c.coveredLines;
+						linesValid += c.validLines;
 					}
 				}
 				tx.Commit();
@@ -50,7 +52,7 @@ namespace b2c {
 		}
 
 		public void Write() {
-			//open file an output 
+			File.WriteAllText(xmlPath, ToString());
 		}
 
 		public override string ToString() {
@@ -83,7 +85,7 @@ namespace b2c {
 		}
 
 		private string Sources() {
-			return "";
+			return "<sources><source>"+Path.GetFullPath(srcPath)+"</source></sources>";
 		}
 
 		private string Packages() {
@@ -92,7 +94,7 @@ namespace b2c {
 			foreach(KeyValuePair<string, Package> entry in packages) {
 				str.Append(entry.Value.ToString());
 			}
-			str.Append("/<packages>");
+			str.Append("</packages>");
 			return str.ToString();
 		}
 
@@ -114,6 +116,8 @@ namespace b2c {
 			public int coveredLines;
 
 			public double LineRate(){
+				if(validLines == 0)
+					return 1;
 				return coveredLines / (double)validLines;
 			}
 		}
@@ -141,7 +145,9 @@ namespace b2c {
 				                 "name=\"{0}\" " +
 				                 "line-rate=\"{1}\" " +
 				                 "branch-rate=\"1.0\" " +
-								 "complexity=\"1.0\">", name, LineRate());
+				                 "complexity=\"1.0\">", 
+				                 System.Security.SecurityElement.Escape(name), 
+				                 LineRate());
 				str.Append("<classes>");
 				foreach(KeyValuePair<string, Class> c in classes) {
 					str.Append(c.Value.ToString());
@@ -167,9 +173,8 @@ namespace b2c {
 
 			private void Init(){
 				using(var tx = connection.BeginTransaction()) 
-					using(var cmd = new SqliteCommand(connection)){
+				using(var cmd = new SqliteCommand("SELECT * FROM methods WHERE classname = :CLASSNAME ", connection)){
 					cmd.Transaction = tx;
-					cmd.CommandText = @"SELECT * FROM methods WHERE classname = :CLASSNAME ";
 					cmd.Parameters.Add(new SqliteParameter(":CLASSNAME", name));
 
 					using(var record = cmd.ExecuteReader()) {
@@ -189,6 +194,9 @@ namespace b2c {
 			}
 
 			public override string ToString() {
+				//double check the relative path part
+				System.Uri source = new Uri("file://"+src);
+				System.Uri basepath = new Uri("file://"+srcPath);
 				StringBuilder str = new StringBuilder();
 				str.AppendFormat("<class " +
 				                 "name=\"{0}\" " +
@@ -196,8 +204,8 @@ namespace b2c {
 				                 "line-rate=\"{2}\" " +
 				                 "branch-rate=\"1.0\" " +
 				                 "complexity=\"1.0\">",
-				                 name, 
-				                 src, //print it relative to one of the source files
+				                 System.Security.SecurityElement.Escape(name), 
+				                 source.MakeRelativeUri(basepath), //print it relative to one of the source files
 				                 LineRate());
 				str.Append("<methods>");
 				foreach(Method c in methods) {
@@ -224,9 +232,8 @@ namespace b2c {
 
 			private void Init(){
 				using(var tx = connection.BeginTransaction()) 
-					using(var cmd = new SqliteCommand(connection)){
+				using(var cmd = new SqliteCommand("SELECT * FROM lines WHERE fullname = :METHODNAME ", connection)){
 					cmd.Transaction = tx;
-					cmd.CommandText = @"SELECT * FROM lines WHERE fullname = :METHODNAME ";
 					cmd.Parameters.Add(new SqliteParameter(":METHODNAME", fullname));
 
 					using(var record = cmd.ExecuteReader()) {
@@ -253,8 +260,8 @@ namespace b2c {
 				                 "line-rate=\"{2}\" " +
 				                 "branch-rate=\"1.0\" " +
 				                 "complexity=\"1.0\">",
-				                 name, 
-				                 fullname, //print it relative to one of the source files
+				                 System.Security.SecurityElement.Escape(name), 
+				                 System.Security.SecurityElement.Escape(fullname), //print it relative to one of the source files
 				                 LineRate());
 				str.Append("<lines>");
 				foreach(Line c in lines) {

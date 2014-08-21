@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -9,8 +10,9 @@ namespace b2c {
 				Usage();
 			}
 
-			Report r = new Report(args[0], args[1], args[2]);
-			Console.WriteLine(r.ToString());
+			Console.WriteLine(Path.GetFullPath(args[0]));
+			Report r = new Report(Path.GetFullPath(args[0]), args[1], args[2]);
+			r.Write();
 		}
 
 		static void Usage() {

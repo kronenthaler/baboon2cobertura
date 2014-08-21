@@ -19,9 +19,9 @@
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Externalconsole>True</Externalconsole>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>~/Documents/qplay/native/conf/native.covcfg.covdb a a</Commandlineparameters>
+    <Commandlineparameters>native.covcfg.covdb a a</Commandlineparameters>
+    <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>none</DebugType>
@@ -36,6 +36,7 @@
     <Reference Include="System" />
     <Reference Include="Mono.Data.Sqlite" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
