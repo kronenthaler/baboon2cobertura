@@ -9,7 +9,8 @@ namespace b2c {
 				Usage();
 			}
 
-
+			Report r = new Report(args[0], args[1], args[2]);
+			Console.WriteLine(r.ToString());
 		}
 
 		static void Usage() {

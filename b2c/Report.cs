@@ -7,7 +7,7 @@ using Mono.Data.Sqlite;
 
 namespace b2c {
 	public class Report : IDisposable {
-		private SqliteConnection connection;
+		private static SqliteConnection connection;
 		private string srcPath;
 		private string xmlPath;
 		private int linesValid;
@@ -35,7 +35,7 @@ namespace b2c {
 				using(var record = cmd.ExecuteReader()) {
 					while(record.HasRows && record.Read()) {
 						//all classes, packages can be infered.
-						Class c = new Class(Convert.ToString("sourcefile"), Convert.ToString("classname"));
+						Class c = new Class(Convert.ToString(record["sourcefile"]), Convert.ToString(record["classname"]));
 						string[] path = c.name.Split('.');
 						string packageName =c.name.Substring(0, c.name.IndexOf(path[path.Length-1]));
 						if(!packages.ContainsKey(packageName)) {
@@ -87,7 +87,13 @@ namespace b2c {
 		}
 
 		private string Packages() {
-			return "";
+			StringBuilder str = new StringBuilder();
+			str.Append("<packages>");
+			foreach(KeyValuePair<string, Package> entry in packages) {
+				str.Append(entry.Value.ToString());
+			}
+			str.Append("/<packages>");
+			return str.ToString();
 		}
 
 		public void Dispose() {
@@ -129,7 +135,21 @@ namespace b2c {
 				}
 			}
 
-			//tostring
+			public override string ToString() {
+				StringBuilder str = new StringBuilder();
+				str.AppendFormat("<package " +
+				                 "name=\"{0}\" " +
+				                 "line-rate=\"{1}\" " +
+				                 "branch-rate=\"1.0\" " +
+								 "complexity=\"1.0\">", name, LineRate());
+				str.Append("<classes>");
+				foreach(KeyValuePair<string, Class> c in classes) {
+					str.Append(c.Value.ToString());
+				}
+				str.Append("</classes>");
+				str.Append("</package>");
+				return str.ToString();
+			}
 		}
 
 		class Class : Element {
@@ -154,7 +174,7 @@ namespace b2c {
 
 					using(var record = cmd.ExecuteReader()) {
 						while(record.HasRows && record.Read()) {
-							Method m = new Method(Convert.ToString("name"));
+							Method m = new Method(Convert.ToString(record["name"]), Convert.ToString(record["fullname"]));
 							AddMethod(m);
 						}
 					}
@@ -168,16 +188,36 @@ namespace b2c {
 				coveredLines += m.coveredLines;
 			}
 
-			//tostring
+			public override string ToString() {
+				StringBuilder str = new StringBuilder();
+				str.AppendFormat("<class " +
+				                 "name=\"{0}\" " +
+				                 "filename=\"{1}\" " +
+				                 "line-rate=\"{2}\" " +
+				                 "branch-rate=\"1.0\" " +
+				                 "complexity=\"1.0\">",
+				                 name, 
+				                 src, //print it relative to one of the source files
+				                 LineRate());
+				str.Append("<methods>");
+				foreach(Method c in methods) {
+					str.Append(c.ToString());
+				}
+				str.Append("</methods>");
+				str.Append("</class>");
+				return str.ToString();
+			}
 		}
 
 		class Method : Element {
 			public IList<Line> lines;
 			public string name;
+			public string fullname;
 
-			public Method(string n){
+			public Method(string n, string f){
 				lines = new List<Line>();
 				name = n;
+				fullname = f;
 
 				Init();
 			}
@@ -187,11 +227,11 @@ namespace b2c {
 					using(var cmd = new SqliteCommand(connection)){
 					cmd.Transaction = tx;
 					cmd.CommandText = @"SELECT * FROM lines WHERE fullname = :METHODNAME ";
-					cmd.Parameters.Add(new SqliteParameter(":METHODNAME", name));
+					cmd.Parameters.Add(new SqliteParameter(":METHODNAME", fullname));
 
 					using(var record = cmd.ExecuteReader()) {
 						while(record.HasRows && record.Read()) {
-							Line l = new Line(Convert.ToInt32("line"),Convert.ToInt32("hits"));
+							Line l = new Line(Convert.ToInt32(record["line"]),Convert.ToInt32(record["hits"]));
 							AddLine(l);
 						}
 					}
@@ -205,7 +245,25 @@ namespace b2c {
 				validLines++;
 			}
 
-			//tostring
+			public override string ToString() {
+				StringBuilder str = new StringBuilder();
+				str.AppendFormat("<method " +
+				                 "name=\"{0}\" " +
+				                 "signature=\"{1}\" " +
+				                 "line-rate=\"{2}\" " +
+				                 "branch-rate=\"1.0\" " +
+				                 "complexity=\"1.0\">",
+				                 name, 
+				                 fullname, //print it relative to one of the source files
+				                 LineRate());
+				str.Append("<lines>");
+				foreach(Line c in lines) {
+					str.Append(c.ToString());
+				}
+				str.Append("</lines>");
+				str.Append("</method>");
+				return str.ToString();
+			}
 		}
 
 		class Line {
@@ -217,7 +275,16 @@ namespace b2c {
 				hits = h;
 			}
 
-			//tostring
+			public override string ToString() {
+				StringBuilder str = new StringBuilder();
+				str.AppendFormat("<line " +
+				                 "number=\"{0}\" " +
+				                 "hits=\"{1}\" " +
+				                 "branch=\"false\" />",
+				                 number, 
+				                 hits);
+				return str.ToString();
+			}
 		}
 	}
 }
