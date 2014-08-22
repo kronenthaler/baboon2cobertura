@@ -69,7 +69,7 @@ namespace b2c {
 				"branches-valid=\"{5}\" "+ 
 				"complexity=\"{6}\" "+
 				"version=\"{7}\" " +
-				"timestamp=\"{8}\">",
+				"timestamp=\"{8}\">\n",
 				linesCovered/(double)linesValid,
 				linesCovered,
 				linesValid,
@@ -85,16 +85,16 @@ namespace b2c {
 		}
 
 		private string Sources() {
-			return "<sources><source>"+Path.GetFullPath(srcPath)+"</source></sources>";
+			return "\t<sources><source>"+Path.GetFullPath(srcPath)+"</source></sources>\n";
 		}
 
 		private string Packages() {
 			StringBuilder str = new StringBuilder();
-			str.Append("<packages>");
+			str.Append("\t<packages>\n");
 			foreach(KeyValuePair<string, Package> entry in packages) {
 				str.Append(entry.Value.ToString());
 			}
-			str.Append("</packages>");
+			str.Append("\t</packages>\n");
 			return str.ToString();
 		}
 
@@ -141,19 +141,19 @@ namespace b2c {
 
 			public override string ToString() {
 				StringBuilder str = new StringBuilder();
-				str.AppendFormat("<package " +
+				str.AppendFormat("\t\t<package " +
 				                 "name=\"{0}\" " +
 				                 "line-rate=\"{1}\" " +
 				                 "branch-rate=\"1.0\" " +
-				                 "complexity=\"1.0\">", 
+				                 "complexity=\"1.0\">\n", 
 				                 System.Security.SecurityElement.Escape(name), 
 				                 LineRate());
-				str.Append("<classes>");
+				str.Append("\t\t\t<classes>\n");
 				foreach(KeyValuePair<string, Class> c in classes) {
 					str.Append(c.Value.ToString());
 				}
-				str.Append("</classes>");
-				str.Append("</package>");
+				str.Append("\t\t\t</classes>\n");
+				str.Append("\t\t</package>\n");
 				return str.ToString();
 			}
 		}
@@ -198,21 +198,21 @@ namespace b2c {
 				System.Uri source = new Uri("file://"+src);
 				System.Uri basepath = new Uri("file://"+srcPath);
 				StringBuilder str = new StringBuilder();
-				str.AppendFormat("<class " +
+				str.AppendFormat("\t\t\t\t<class " +
 				                 "name=\"{0}\" " +
 				                 "filename=\"{1}\" " +
 				                 "line-rate=\"{2}\" " +
 				                 "branch-rate=\"1.0\" " +
-				                 "complexity=\"1.0\">",
+				                 "complexity=\"1.0\">\n",
 				                 System.Security.SecurityElement.Escape(name), 
-				                 source.MakeRelativeUri(basepath), //print it relative to one of the source files
+				                 basepath.MakeRelativeUri(source), //print it relative to one of the source files
 				                 LineRate());
-				str.Append("<methods>");
+				str.Append("\t\t\t\t\t<methods>\n");
 				foreach(Method c in methods) {
 					str.Append(c.ToString());
 				}
-				str.Append("</methods>");
-				str.Append("</class>");
+				str.Append("\t\t\t\t\t</methods>\n");
+				str.Append("\t\t\t\t</class>\n");
 				return str.ToString();
 			}
 		}
@@ -254,21 +254,21 @@ namespace b2c {
 
 			public override string ToString() {
 				StringBuilder str = new StringBuilder();
-				str.AppendFormat("<method " +
+				str.AppendFormat("\t\t\t\t\t\t<method " +
 				                 "name=\"{0}\" " +
 				                 "signature=\"{1}\" " +
 				                 "line-rate=\"{2}\" " +
 				                 "branch-rate=\"1.0\" " +
-				                 "complexity=\"1.0\">",
+				                 "complexity=\"1.0\">\n",
 				                 System.Security.SecurityElement.Escape(name), 
 				                 System.Security.SecurityElement.Escape(fullname), //print it relative to one of the source files
 				                 LineRate());
-				str.Append("<lines>");
+				str.Append("\t\t\t\t\t\t\t<lines>\n");
 				foreach(Line c in lines) {
 					str.Append(c.ToString());
 				}
-				str.Append("</lines>");
-				str.Append("</method>");
+				str.Append("\t\t\t\t\t\t\t</lines>\n");
+				str.Append("\t\t\t\t\t\t</method>\n");
 				return str.ToString();
 			}
 		}
@@ -284,10 +284,10 @@ namespace b2c {
 
 			public override string ToString() {
 				StringBuilder str = new StringBuilder();
-				str.AppendFormat("<line " +
+				str.AppendFormat("\t\t\t\t\t\t\t\t<line " +
 				                 "number=\"{0}\" " +
 				                 "hits=\"{1}\" " +
-				                 "branch=\"false\" />",
+				                 "branch=\"false\" />\n",
 				                 number, 
 				                 hits);
 				return str.ToString();
