@@ -16,7 +16,7 @@ namespace b2c {
 		}
 
 		static void Usage() {
-			Console.WriteLine("b2c COVDB OUTPUT SRC_PATH");
+			Console.WriteLine("Usage: b2c COVDB OUTPUT SRC_DIR");
 			Environment.Exit(1);
 		}
 	}

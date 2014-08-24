@@ -261,7 +261,7 @@ namespace b2c {
 				                 "branch-rate=\"1.0\" " +
 				                 "complexity=\"1.0\">\n",
 				                 System.Security.SecurityElement.Escape(name), 
-				                 System.Security.SecurityElement.Escape(fullname), //print it relative to one of the source files
+				                 System.Security.SecurityElement.Escape(fullname),
 				                 LineRate());
 				str.Append("\t\t\t\t\t\t\t<lines>\n");
 				foreach(Line c in lines) {
